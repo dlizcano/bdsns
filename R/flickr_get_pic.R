@@ -1,8 +1,9 @@
 
 
 #-------------------------------------------------------------------
-# Downloading Flickr pictures for a certain hashtag or a location
-# Benedikt Koehler, 2013
+# Downloading all Flickr pictures for a set (album) 
+# Diego J. Lizcano, 2016
+# Modified from: Benedikt Koehler, 2013
 # @furukama
 #-------------------------------------------------------------------
 
@@ -10,45 +11,86 @@ library(RCurl)
 library(rjson)
 
 # Login credentials
-api.key <- "" # API key for Flickr API goes here
+api.key <- "05bdd790fdcd89f9344003e0f47d7c86" # API key for Flickr API goes here
+oauth_token <- "72157668424594651-62abe087b5cd8b53"
 
-# Search data: either hashtag or location (bbox = Bounding Box)
-hashtag <- ""
-bbox <- "5.866240,47.270210,15.042050,55.058140"
+# Search data: by folder = set
 
-# Time frame
-maxdate <- "2013-07-31"
-mindate <- "2013-07-01"
 savedir <- substr(mindate, 6, 10)
-workdir <- "C:/flickr_images/"
+workdir <- "C:/Temp/"
+set     <- "72157653248586872" # picture folders
+user_id <- "128565749%40N04"# equivale a: "128565749@N04"
+
 
 # Search parameters
-sort <- "interestingness-desc" # Sort by Interestingness (or: relevance)
-n <- 500
-p <- 10
+n <- 500 # pictures per page
+p <- 10 # Number of pages
+
 
 # Downloading the images
 for (i in 1:p) {
-  if (hashtag != "") {
-    api <- paste("http://www.flickr.com/services/rest/?method=flickr.photos.search&format=json&api_key=", api.key, "&nojsoncallback=1&page=", i, "&per_page=", n, "&tags=", hashtag, sep="")
-    imgdir <- paste(workdir, hashtag, sep="")
-    dir.create(imgdir)
-  } else {
-    api <- paste("http://www.flickr.com/services/rest/?method=flickr.photos.search&format=json&api_key=", api.key, "&nojsoncallback=1&page=", i, "&per_page=", n, "&bbox=", bbox, "&min_taken_date=", mindate, "&max_taken_date=", maxdate, "&sort=", sort, sep="")
-    imgdir <- paste(workdir, savedir, sep="")
-    dir.create(imgdir)
+#   if (set != "") { # as json got problems with slash
+#     api <- paste("https://api.flickr.com/services/rest/?method=flickr.photosets.getPhotos&api_key=", api.key, 
+#                  "&photoset_id=", set,
+#                  "&user_id=", "128565749%40N04",# tok$credentials$user_nsid,
+#                  "&extras=url_o", # get the original url # makes problem in JSON
+#                  "&per_page=", n, 
+#                  "&page=", i,
+#                  "&format=rest",#  "&format=json",
+#                  "&nojsoncallback=1",
+#                  "&auth_token=", oauth_token, #tok$credentials$oauth_token,
+#                  "&api_sig=772bff11e245f5fb7450da665114373b", # NPI what is this but required
+#                  sep="")
+#     
+#   } else { 
+  # as XML
+    api <- paste("https://api.flickr.com/services/rest/?method=flickr.photosets.getPhotos",
+                 "&api_key=05bdd790fdcd89f9344003e0f47d7c86",
+                 "&photoset_id=72157653248586872",
+                 "&user_id=128565749%40N04",
+                 "&extras=url_o",
+                 "&per_page=", n,
+                 "&page=", i,
+                 "&format=rest",
+                 "&api_sig=f50c1addd004871de5569d89f8e80fb6", # NPI what is this, but is required !
+                 sep="")
+    
+
   }
   
   raw_data <- getURL(api, ssl.verifypeer = FALSE)
-  data <- fromJSON(raw_data, unexpected.escape="skip", method="R")
+  test<-xmlToList(raw_data)
+  fields<-names(test$photoset[[1]])
+  album<-test$photoset$.attrs[10]
+  data_table<- data.frame() # empty table
+  url_link<- vector()
+  for (j in 2:length(test$photoset)-1){
+    for( z in 1: length(test$photoset$photo)){
+      data_table [j,z] <- test$photoset[[j]][[z]]
+    }
+    url_link[j] <- paste("https://www.flickr.com/photos/",user_id,"/",data_table[j,1],"/in/album-",set,sep="")
+  }
   
-  for (u in 1:length(data$photos$photo)) {
-    id <- data$photos$photo[[u]]$id
-    farm <- data$photos$photo[[u]]$farm
-    server <- data$photos$photo[[u]]$server
-    secret <- data$photos$photo[[u]]$secret
-    url <- paste("http://farm", farm, ".staticflickr.com/", server, "/", id, "_", secret, "_t.jpg", sep="")
-    temp <- paste(imgdir, "/", id, ".jpg", sep="")
-    download.file(url, temp, mode="wb")
+  colnames(data_table)<-fields
+  data_table<-cbind(data_table,url_link)
+  
+  # data <- fromJSON(raw_data, unexpected.escape="keep", method="R")
+  
+  imgdir <- paste(workdir, data$photoset$title, sep="")
+  dir.create(imgdir)
+  
+  for (u in 2:length(test$photoset)-1) {
+    # id <- data$photos$photo[[u]]$id
+    # farm <- data$photos$photo[[u]]$farm
+    # server <- data$photos$photo[[u]]$server
+    # secret <- data$photos$photo[[u]]$secret
+    # url_donload<-paste("https://c2.staticflickr.com/",farm,"/",server,"/",id,"_",secret,"_o.jpg",sep="")
+    url_download<- gsub("farm6.staticflickr.com/", paste("c2.staticflickr.com/", data_table$farm[u],"/", sep=""), data_table$url_o[u]) # trick to get full resol
+    temp <- paste(imgdir, "/", data_table$title[u], ".jpg", sep="") 
+       
+    download.file(url_download, temp, method="internal", mode="wb")
   }
 }
+
+
+
