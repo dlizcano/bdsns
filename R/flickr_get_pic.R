@@ -22,11 +22,22 @@ set     <- "72157653248586872" # picture folders
 user_id <- "128565749%40N04"# equivale a: "128565749@N04"
 
 
+
+flickr_get_pic <- function (workdir=NA,set=NA,user_id=NA,apikey="5d6a54435c9da0c091e94cf2232e94eb"){
+  if(is.na(apikey)){
+    print("Need to supply API key for Flicker.com website. \n Get yours at http://www.flickr.com/services/api/misc.api_keys.html")
+    return(NULL)
+  }
+  if(is.na(set)){
+    print("Need to supply a folder (set).")
+    return(NULL)
+  }
+  
 # Search parameters
 n <- 500 # pictures per page
 p <- 10 # Number of pages
-
-
+  
+  
 # Downloading the images
 for (i in 1:p) {
 #   if (set != "") { # as json got problems with slash
@@ -45,20 +56,20 @@ for (i in 1:p) {
 #   } else { 
   # as XML
     api <- paste("https://api.flickr.com/services/rest/?method=flickr.photosets.getPhotos",
-                 "&api_key=05bdd790fdcd89f9344003e0f47d7c86",
-                 "&photoset_id=72157653248586872",
+                 "&api_key=5d6a54435c9da0c091e94cf2232e94eb",
+                 "&photoset_id=", set,
                  "&user_id=128565749%40N04",
                  "&extras=url_o",
                  "&per_page=", n,
                  "&page=", i,
-                 "&format=rest",
-                 "&api_sig=f50c1addd004871de5569d89f8e80fb6", # NPI what is this, but is required !
-                 sep="")
+                 "&format=rest", sep="")
+                 #"&api_sig=fb2e9863c887c11077eb666e2bc3826d", # NPI what is this, but is required !
+                 # sep="")
     
 
   }
   
-  raw_data <- getURL(api, ssl.verifypeer = FALSE)
+  raw_data <- getURL(api)
   test<-xmlToList(raw_data)
   fields<-names(test$photoset[[1]])
   album<-test$photoset$.attrs[10]
@@ -80,7 +91,7 @@ for (i in 1:p) {
   dir.create(imgdir)
   
   exiflist<-list()
-  for (u in 2: 15){# length(test$photoset)-1) {
+  for (u in 2:length(test$photoset)-1) {
     # id <- data$photos$photo[[u]]$id
     # farm <- data$photos$photo[[u]]$farm
     # server <- data$photos$photo[[u]]$server
@@ -91,7 +102,10 @@ for (i in 1:p) {
     exiflist[[u]]<-get_exif(apikey = apikey, picture_id=data_table$id[u]) # get exif info  
     download.file(url_download, temp, method="internal", mode="wb")
   }
-ouput<-rbind(data_table[5,],exiflist[[6]])
-return(data_table)
+  a<-ldply(exiflist)
+ouput<-cbind(data_table,a)
+return(ouput)
+
+}
 
 

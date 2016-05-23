@@ -4,10 +4,10 @@
 #' @param apikey - API key provided by Flickr.com website. (Refer http://www.flickr.com/services/api/misc.api_keys.html for more details.)
 #' @param picture_id - Test to search: ="17966004672"
 #' @examples \dontrun{
-#'  get_exif(apikey,"17966004672")
+#'  get_exif("05bdd790fdcd89f9344003e0f47d7c86","17966004672")
 #' }
 #' @export
-get_exif <- function (apikey=NA,picture_id=NA){
+get_exif <- function (apikey="05bdd790fdcd89f9344003e0f47d7c86", picture_id=NA){
   if(is.na(apikey)){
     print("Need to supply API key for Flicker.com website. \n Get yours at http://www.flickr.com/services/api/misc.api_keys.html")
     return(NULL)
