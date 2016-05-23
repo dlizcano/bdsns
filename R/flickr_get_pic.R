@@ -9,14 +9,14 @@
 
 library(RCurl)
 library(rjson)
+library(dplyr)
 
 # Login credentials
-api.key <- "05bdd790fdcd89f9344003e0f47d7c86" # API key for Flickr API goes here
+apikey <- "05bdd790fdcd89f9344003e0f47d7c86" # API key for Flickr API goes here
 oauth_token <- "72157668424594651-62abe087b5cd8b53"
 
 # Search data: by folder = set
 
-savedir <- substr(mindate, 6, 10)
 workdir <- "C:/Temp/"
 set     <- "72157653248586872" # picture folders
 user_id <- "128565749%40N04"# equivale a: "128565749@N04"
@@ -72,14 +72,15 @@ for (i in 1:p) {
   }
   
   colnames(data_table)<-fields
-  data_table<-cbind(data_table,url_link)
+  data_table<-cbind(data_table,url_link) # Table to store info
   
   # data <- fromJSON(raw_data, unexpected.escape="keep", method="R")
   
   imgdir <- paste(workdir, data$photoset$title, sep="")
   dir.create(imgdir)
   
-  for (u in 2:length(test$photoset)-1) {
+  exiflist<-list()
+  for (u in 2: 15){# length(test$photoset)-1) {
     # id <- data$photos$photo[[u]]$id
     # farm <- data$photos$photo[[u]]$farm
     # server <- data$photos$photo[[u]]$server
@@ -87,10 +88,10 @@ for (i in 1:p) {
     # url_donload<-paste("https://c2.staticflickr.com/",farm,"/",server,"/",id,"_",secret,"_o.jpg",sep="")
     url_download<- gsub("farm6.staticflickr.com/", paste("c2.staticflickr.com/", data_table$farm[u],"/", sep=""), data_table$url_o[u]) # trick to get full resol
     temp <- paste(imgdir, "/", data_table$title[u], ".jpg", sep="") 
-       
+    exiflist[[u]]<-get_exif(apikey = apikey, picture_id=data_table$id[u]) # get exif info  
     download.file(url_download, temp, method="internal", mode="wb")
   }
-}
-
+ouput<-rbind(data_table[5,],exiflist[[6]])
+return(data_table)
 
 
