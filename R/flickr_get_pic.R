@@ -11,19 +11,21 @@ library(RCurl)
 library(rjson)
 library(dplyr)
 
+source(get_exif.R)
+
 # Login credentials
 apikey <- "05bdd790fdcd89f9344003e0f47d7c86" # API key for Flickr API goes here
-oauth_token <- "72157668424594651-62abe087b5cd8b53"
+oauth_token <- "" # get yours
 
 # Search data: by folder = set
 
 workdir <- "C:/Temp/"
-set     <- "72157653248586872" # picture folders
+set     <- "72157649989156607" # picture folders
 user_id <- "128565749%40N04"# equivale a: "128565749@N04"
 
 
 
-flickr_get_pic <- function (workdir=NA,set=NA,user_id=NA,apikey="5d6a54435c9da0c091e94cf2232e94eb"){
+flickr_get_pic <- function (workdir="NA",set="NA",user_id="NA",apikey="5d6a54435c9da0c091e94cf2232e94eb"){
   if(is.na(apikey)){
     print("Need to supply API key for Flicker.com website. \n Get yours at http://www.flickr.com/services/api/misc.api_keys.html")
     return(NULL)
@@ -40,21 +42,7 @@ p <- 10 # Number of pages
   
 # Downloading the images
 for (i in 1:p) {
-#   if (set != "") { # as json got problems with slash
-#     api <- paste("https://api.flickr.com/services/rest/?method=flickr.photosets.getPhotos&api_key=", api.key, 
-#                  "&photoset_id=", set,
-#                  "&user_id=", "128565749%40N04",# tok$credentials$user_nsid,
-#                  "&extras=url_o", # get the original url # makes problem in JSON
-#                  "&per_page=", n, 
-#                  "&page=", i,
-#                  "&format=rest",#  "&format=json",
-#                  "&nojsoncallback=1",
-#                  "&auth_token=", oauth_token, #tok$credentials$oauth_token,
-#                  "&api_sig=772bff11e245f5fb7450da665114373b", # NPI what is this but required
-#                  sep="")
-#     
-#   } else { 
-  # as XML
+
     api <- paste("https://api.flickr.com/services/rest/?method=flickr.photosets.getPhotos",
                  "&api_key=5d6a54435c9da0c091e94cf2232e94eb",
                  "&photoset_id=", set,
@@ -66,8 +54,6 @@ for (i in 1:p) {
                  #"&api_sig=fb2e9863c887c11077eb666e2bc3826d", # NPI what is this, but is required !
                  # sep="")
     
-
-  }
   
   raw_data <- getURL(api)
   test<-xmlToList(raw_data)
@@ -87,7 +73,7 @@ for (i in 1:p) {
   
   # data <- fromJSON(raw_data, unexpected.escape="keep", method="R")
   
-  imgdir <- paste(workdir, data$photoset$title, sep="")
+  imgdir <- paste(workdir, test$photoset$.attrs[10], sep="")
   dir.create(imgdir)
   
   exiflist<-list()
@@ -105,6 +91,8 @@ for (i in 1:p) {
   a<-ldply(exiflist)
 ouput<-cbind(data_table,a)
 return(ouput)
+
+}
 
 }
 
