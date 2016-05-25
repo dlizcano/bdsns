@@ -22,11 +22,38 @@ flickr.endpoint <- oauth_endpoint(
 tok <- oauth1.0_token(
   flickr.endpoint
   , flickr.app
-  , cache = F
+  , cache = T
 )
 
-
 # end of auhtorizing part
+
+# GET collections 
+
+mydata <- fromJSON(sprintf(
+  "https://api.flickr.com/services/rest/?method=flickr.collections.getTree&api_key=%s&user_id=%s&format=json&nojsoncallback=1"
+  , key = "d1a79560f32f4ceded2440c13652a7be"
+  , user_id = "128565749@N04"
+  # , format( Sys.Date() - i, "%Y-%m-%d")
+  , tok$credentials$oauth_token
+), flatten = TRUE)
+
+mydata$collections$collection$set
+
+
+
+
+
+
+
+collections<-GET(url=sprintf(
+  "https://api.flickr.com/services/rest/?method=flickr.collections.getTree&api_key=%s&user_id=%s&format=json&nojsoncallback=1"
+  , key = "d1a79560f32f4ceded2440c13652a7be"
+  , user_id = "128565749@N04"
+  # , format( Sys.Date() - i, "%Y-%m-%d")
+  , tok$credentials$oauth_token
+ ))
+
+
 
 #get a list and then make it a data frame 
 interesting <- lapply(1:daysAnalyze, function(i){
